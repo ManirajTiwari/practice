@@ -1,21 +1,19 @@
-from django.shortcuts import render
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Person
 from .form import PersonForm
 
-def form_view(request):
-    if request.method == "POST":
-        full_name = request.POST.get('full_name')
-        phone_number = request.POST.get('phone_number')
-        email = request.POST.get('email')
+@api_view(['GET', 'POST'])
+def person_api_view(request):
+    if request.method == 'GET':
+        persons = Person.objects.all()
+        serializer_data = [{'full_name': p.full_name, 'phone_number': p.phone_number, 'email': p.email} for p in persons]
+        return Response(serializer_data)
 
-        # Save data to database
-        form = PersonForm(request.POST)
+    elif request.method == 'POST':
+        form = PersonForm(request.POST or request.data)
         if form.is_valid():
             form.save()
-
-        return render(request, 'home/form.html', {'form':PersonForm(),'message': 'Saved successfully!'})
-
-    else:
-        form = PersonForm()
-
-    # THIS RETURN WAS MISSING OR MISINDENTED IN YOUR CODE:
-    return render(request, 'home/form.html', {'form':form})
+            return Response({'message': 'Saved successfully!'}, status=status.HTTP_201_CREATED)
+        return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)

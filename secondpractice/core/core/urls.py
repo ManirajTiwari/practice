@@ -19,6 +19,6 @@ from django.urls import path
 from home.views import *
 
 urlpatterns = [
-    path('', form_view, name="form_view"),
-    path('admin/', admin.site.urls),
+    path('api/person/', person_api_view, name='person_api'),
+    # ... your admin path
 ]
