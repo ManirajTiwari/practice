@@ -48,4 +48,13 @@ def person_api_view(request, pk=None):
             return JsonResponse({'message': 'Updated successfully!'})
         return JsonResponse(form.errors, status=400)
 
-    return HttpResponseNotAllowed(['GET', 'POST', 'PUT'])
+    # DELETE: Remove an existing person
+    elif request.method == 'DELETE':
+        if not pk:
+            return JsonResponse({'error': 'ID is required for deletion'}, status=400)
+            
+        person = get_object_or_404(Person, pk=pk)
+        person.delete()
+        return JsonResponse({'message': 'Deleted successfully!'})
+
+    return HttpResponseNotAllowed(['GET', 'POST', 'PUT', 'DELETE'])

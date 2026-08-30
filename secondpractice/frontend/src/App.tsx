@@ -70,6 +70,28 @@ function App() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!editingId) return;
+    if (!window.confirm('Are you sure you want to delete this record?')) return;
+
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/api/person/${editingId}/`, {
+        method: 'DELETE',
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        alert(data.message || 'Deleted successfully!');
+        handleCancelEdit();
+        fetchPersons();
+      } else {
+        alert(JSON.stringify(data));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <div style={{ 
       maxWidth: '800px', 
@@ -145,21 +167,38 @@ function App() {
           </button>
 
           {editingId && (
-            <button 
-              type="button" 
-              onClick={handleCancelEdit}
-              style={{ 
-                backgroundColor: '#9ca3af', 
-                color: 'white', 
-                padding: '12px 20px', 
-                borderRadius: '6px', 
-                border: 'none', 
-                fontWeight: '600', 
-                cursor: 'pointer'
-              }}
-            >
-              Cancel
-            </button>
+            <>
+              <button 
+                type="button" 
+                onClick={handleDelete}
+                style={{ 
+                  backgroundColor: '#dc2626', 
+                  color: 'white', 
+                  padding: '12px 20px', 
+                  borderRadius: '6px', 
+                  border: 'none', 
+                  fontWeight: '600', 
+                  cursor: 'pointer'
+                }}
+              >
+                Delete
+              </button>
+              <button 
+                type="button" 
+                onClick={handleCancelEdit}
+                style={{ 
+                  backgroundColor: '#9ca3af', 
+                  color: 'white', 
+                  padding: '12px 20px', 
+                  borderRadius: '6px', 
+                  border: 'none', 
+                  fontWeight: '600', 
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+            </>
           )}
         </div>
       </form>
