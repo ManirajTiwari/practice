@@ -7,7 +7,6 @@ from .form import PersonForm
 
 @csrf_exempt
 def person_api_view(request, pk=None):
-    # GET: Retrieve all persons or a single person
     if request.method == 'GET':
         if pk:
             person = get_object_or_404(Person, pk=pk)
@@ -17,7 +16,6 @@ def person_api_view(request, pk=None):
             data = [{'id': p.id, 'full_name': p.full_name, 'phone_number': p.phone_number, 'email': p.email} for p in persons]
         return JsonResponse(data, safe=False)
 
-    # POST: Create a new person
     elif request.method == 'POST':
         try:
             payload = json.loads(request.body)
@@ -30,8 +28,7 @@ def person_api_view(request, pk=None):
             return JsonResponse({'message': 'Saved successfully!', 'id': person.id}, status=201)
         return JsonResponse(form.errors, status=400)
 
-    # PUT: Update an existing person
-    elif request.method == 'PUT':
+    elif request.method in ['PUT', '']:
         if not pk:
             return JsonResponse({'error': 'ID is required for updates'}, status=400)
             
@@ -41,14 +38,19 @@ def person_api_view(request, pk=None):
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
 
-        # Passing instance=person tells Django to UPDATE this instance
+        # PATCH allows partial updates; PUT expects a complete resource replacement.
+        # For vanilla forms, passing data with existing instance fields or handling unrequired fields 
+        # requires setting form fields as optional (blank=True/null=True in model/form) if doing true PATCH.
+        is_partial = request.method == 'PATCH'
+        
+        # If doing a true PUT, missing fields should clear or fail. If PATCH, we can bind selectively.
         form = PersonForm(payload, instance=person)
+        
         if form.is_valid():
             form.save()
             return JsonResponse({'message': 'Updated successfully!'})
         return JsonResponse(form.errors, status=400)
 
-    # DELETE: Remove an existing person
     elif request.method == 'DELETE':
         if not pk:
             return JsonResponse({'error': 'ID is required for deletion'}, status=400)
@@ -57,4 +59,4 @@ def person_api_view(request, pk=None):
         person.delete()
         return JsonResponse({'message': 'Deleted successfully!'})
 
-    return HttpResponseNotAllowed(['GET', 'POST', 'PUT', 'DELETE'])
+    return HttpResponseNotAllowed(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])
