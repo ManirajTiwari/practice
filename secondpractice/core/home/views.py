@@ -10,41 +10,67 @@ def person_api_view(request, pk=None):
     if request.method == 'GET':
         if pk:
             person = get_object_or_404(Person, pk=pk)
-            data = {'id': person.id, 'full_name': person.full_name, 'phone_number': person.phone_number, 'email': person.email}
+            data = {
+                'id': person.id,
+                'full_name': person.full_name,
+                'phone_number': person.phone_number,
+                'email': person.email,
+                'image': request.build_absolute_uri(person.image.url) if person.image else None
+            }
         else:
             persons = Person.objects.all()
-            data = [{'id': p.id, 'full_name': p.full_name, 'phone_number': p.phone_number, 'email': p.email} for p in persons]
+            data = [
+                {
+                    'id': p.id,
+                    'full_name': p.full_name,
+                    'phone_number': p.phone_number,
+                    'email': p.email,
+                    'image': request.build_absolute_uri(p.image.url) if p.image else None
+                }
+                for p in persons
+            ]
         return JsonResponse(data, safe=False)
 
     elif request.method == 'POST':
-        try:
-            payload = json.loads(request.body)
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        # Accept both multipart form data and raw JSON fallback
+        if request.content_type and 'multipart/form-data' in request.content_type:
+            data = request.POST
+            files = request.FILES
+        else:
+            try:
+                data = json.loads(request.body)
+                files = None
+            except json.JSONDecodeError:
+                return JsonResponse({'error': 'Invalid payload'}, status=400)
 
-        form = PersonForm(payload)
+        form = PersonForm(data, files)
         if form.is_valid():
             person = form.save()
             return JsonResponse({'message': 'Saved successfully!', 'id': person.id}, status=201)
         return JsonResponse(form.errors, status=400)
 
-    elif request.method in ['PUT', '']:
+    elif request.method in ['PUT', 'PATCH']:
         if not pk:
             return JsonResponse({'error': 'ID is required for updates'}, status=400)
             
         person = get_object_or_404(Person, pk=pk)
-        try:
-            payload = json.loads(request.body)
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON'}, status=400)
 
-        # PATCH allows partial updates; PUT expects a complete resource replacement.
-        # For vanilla forms, passing data with existing instance fields or handling unrequired fields 
-        # requires setting form fields as optional (blank=True/null=True in model/form) if doing true PATCH.
-        is_partial = request.method == 'PATCH'
-        
-        # If doing a true PUT, missing fields should clear or fail. If PATCH, we can bind selectively.
-        form = PersonForm(payload, instance=person)
+        # For multipart forms sent via POST/PUT, read from POST and FILES
+        if request.content_type and 'multipart/form-data' in request.content_type:
+            # Django only parses request.POST on POST methods; parse body if method is PUT/PATCH
+            if request.method in ['PUT', 'PATCH'] and not request.POST:
+                data, files = request.parse_file_upload(request.META, request)
+            else:
+                data = request.POST
+                files = request.FILES
+        else:
+            try:
+                data = json.loads(request.body)
+                files = None
+            except json.JSONDecodeError:
+                return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+        form = PersonForm(data, files, instance=person)
         
         if form.is_valid():
             form.save()

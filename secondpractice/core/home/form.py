@@ -5,7 +5,7 @@ from .models import Person
 class PersonForm(forms.ModelForm):
     class Meta:
         model = Person
-        fields = ['full_name', 'phone_number', 'email']
+        fields = ['full_name', 'phone_number', 'email', 'image']
         
         widgets = {
             'full_name': forms.TextInput(attrs={
@@ -20,12 +20,17 @@ class PersonForm(forms.ModelForm):
                 'placeholder': 'john@example.com',
                 'class': 'form-control',
             }),
+            'image': forms.ClearableFileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*',
+            }),
         }
         
         labels = {
             'full_name': 'Full Name',
             'phone_number': 'Phone Number (10 digits)',
             'email': 'Email Address',
+            'image': 'Profile Picture',
         }
 
     def clean_phone_number(self):
