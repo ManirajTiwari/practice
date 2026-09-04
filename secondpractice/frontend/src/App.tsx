@@ -22,16 +22,29 @@ function App() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [fileInputKey, setFileInputKey] = useState<number>(Date.now());
 
-  const fetchPersons = () => {
-    fetch('http://127.0.0.1:8000/api/person/')
-      .then(res => res.json())
-      .then(data => setItems(data))
-      .catch(err => console.error(err));
+  const fetchPersons = async () => {
+    try {
+      const res = await fetch('http://127.0.0.1:8000/api/person/');
+      if (!res.ok) throw new Error('Failed to fetch persons');
+      const data = await res.json();
+      setItems(data);
+    } catch (err) {
+      console.error('Fetch error:', err);
+    }
   };
 
   useEffect(() => {
     fetchPersons();
   }, []);
+
+  // Revoke object URL on cleanup to avoid memory leaks
+  useEffect(() => {
+    return () => {
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -54,6 +67,9 @@ function App() {
   };
 
   const handleCancelEdit = () => {
+    if (imagePreview && imagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreview);
+    }
     setEditingId(null);
     setFormData({ full_name: '', phone_number: '', email: '' });
     setImageFile(null);
@@ -65,7 +81,8 @@ function App() {
     e.preventDefault();
     const isEditing = editingId !== null;
     
-    // We target the endpoint directly for PUT/POST operations
+    // Note: If using Django REST Framework with FormData, multi-part PUT can fail.
+    // Use PATCH or standard POST endpoint with Method Override if needed.
     const url = isEditing 
       ? `http://127.0.0.1:8000/api/person/${editingId}/` 
       : 'http://127.0.0.1:8000/api/person/';
@@ -94,7 +111,7 @@ function App() {
         alert(JSON.stringify(data));
       }
     } catch (err) {
-      console.error(err);
+      console.error('Submit error:', err);
     }
   };
 
@@ -106,17 +123,17 @@ function App() {
       const response = await fetch(`http://127.0.0.1:8000/api/person/${editingId}/`, {
         method: 'DELETE',
       });
-      const data = await response.json();
 
       if (response.ok) {
-        alert(data.message || 'Deleted successfully!');
+        alert('Deleted successfully!');
         handleCancelEdit();
         fetchPersons();
       } else {
+        const data = await response.json().catch(() => ({}));
         alert(JSON.stringify(data));
       }
     } catch (err) {
-      console.error(err);
+      console.error('Delete error:', err);
     }
   };
 
