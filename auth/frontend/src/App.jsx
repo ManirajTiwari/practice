@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { GoogleLogin } from '@react-oauth/google';
 import API from './api';
 
 function App() {
@@ -18,7 +19,7 @@ function App() {
     }
   };
 
-  // Login (Obtain Token)
+  // Login (Obtain JWT Token)
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
@@ -28,6 +29,21 @@ function App() {
       alert('Login Successful!');
     } catch (err) {
       alert('Invalid Credentials');
+    }
+  };
+
+  // Google OAuth Login
+  const handleGoogleLoginSuccess = async (credentialResponse) => {
+    try {
+      const res = await API.post('auth/google/', {
+        id_token: credentialResponse.credential,
+      });
+      localStorage.setItem('access_token', res.data.access || res.data.access_token);
+      localStorage.setItem('refresh_token', res.data.refresh || res.data.refresh_token);
+      alert('Google Login Successful!');
+    } catch (err) {
+      console.error('Google Auth Failed:', err);
+      alert('Google Authentication failed on backend');
     }
   };
 
@@ -44,23 +60,29 @@ function App() {
   return (
     <div style={{ padding: '40px', fontFamily: 'sans-serif' }}>
       <h2>Django + React JWT Auth Base</h2>
-      
+
       <div style={{ display: 'flex', gap: '40px' }}>
         <form onSubmit={handleRegister}>
           <h3>Register</h3>
-          <input placeholder="Username" onChange={e => setUsername(e.target.value)} /><br/><br/>
-          <input placeholder="Email" onChange={e => setEmail(e.target.value)} /><br/><br/>
-          <input type="password" placeholder="Password" onChange={e => setPassword(e.target.value)} /><br/><br/>
+          <input placeholder="Username" onChange={(e) => setUsername(e.target.value)} /><br /><br />
+          <input placeholder="Email" onChange={(e) => setEmail(e.target.value)} /><br /><br />
+          <input type="password" placeholder="Password" onChange={(e) => setPassword(e.target.value)} /><br /><br />
           <button type="submit">Sign Up</button>
         </form>
 
         <form onSubmit={handleLogin}>
           <h3>Login</h3>
-          <input placeholder="Username" onChange={e => setUsername(e.target.value)} /><br/><br/>
-          <input type="password" placeholder="Password" onChange={e => setPassword(e.target.value)} /><br/><br/>
+          <input placeholder="Username" onChange={(e) => setUsername(e.target.value)} /><br /><br />
+          <input type="password" placeholder="Password" onChange={(e) => setPassword(e.target.value)} /><br /><br />
           <button type="submit">Login</button>
         </form>
       </div>
+
+      <h2>Google OAuth Login</h2>
+      <GoogleLogin
+        onSuccess={handleGoogleLoginSuccess}
+        onError={() => alert('Google Login Failed')}
+      />
 
       <hr style={{ margin: '40px 0' }} />
       <button onClick={getProtectedData}>Test Protected API</button>

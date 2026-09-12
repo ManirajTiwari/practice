@@ -3,6 +3,14 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth.models import User
+from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from dj_rest_auth.registration.views import SocialLoginView
+
+class GoogleLogin(SocialLoginView):
+    adapter_class = GoogleOAuth2Adapter
+    callback_url = "http://localhost:5173"
+    client_class = OAuth2Client
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -13,7 +21,7 @@ def register_user(request):
 
     if not username or not email or not password:
         return Response({'error': 'please provide all fields'}, status= status.HTTP_400_BAD_REQUEST)
-    if User.objects.filter(uername=username).exists():
+    if User.objects.filter(username=username).exists():
         return Response({'error': 'username already exists'}, status= status.HTTP_400_BAD_REQUEST)
 
     user = User.objects.create_user(username=username, email=email, password=password)
