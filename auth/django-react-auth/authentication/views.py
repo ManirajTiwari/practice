@@ -4,6 +4,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth.models import User
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialLoginView
 
@@ -12,6 +13,11 @@ class GoogleLogin(SocialLoginView):
     callback_url = "http://localhost:5173"
     client_class = OAuth2Client
 
+class GitHubLogin(SocialLoginView):
+    adapter_class = GitHubOAuth2Adapter
+    callback_url = "http://localhost:5173/github/callback"
+    client_class = OAuth2Client
+    
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register_user(request):

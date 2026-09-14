@@ -47,6 +47,33 @@ function App() {
     }
   };
 
+  // 1. User redirect to GitHub Authorization URL
+  const handleGithubLogin = () => {
+    const client_id = "YOUR_GITHUB_CLIENT_ID";
+    const redirect_uri = "http://localhost:5173/github/callback";
+    window.location.href = `https://github.com/login/oauth/authorize?client_id=${client_id}&redirect_uri=${redirect_uri}&scope=user:email`;
+  };
+
+  // 2. Catch the Callback Code from URL parameter
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+
+    if (code) {
+      // Exchange code with Django Backend
+      API.post('auth/github/', { code })
+        .then((res) => {
+          localStorage.setItem('access_token', res.data.access_token);
+          localStorage.setItem('refresh_token', res.data.refresh_token);
+          alert('GitHub Login Successful! User Data Synced in DB.');
+          window.history.replaceState({}, document.title, "/"); // Clean URL
+        })
+        .catch((err) => {
+          console.error('GitHub Login Failed:', err);
+        });
+    }
+  }, []);
+
   // Fetch Protected Data
   const getProtectedData = async () => {
     try {
@@ -83,6 +110,16 @@ function App() {
         onSuccess={handleGoogleLoginSuccess}
         onError={() => alert('Google Login Failed')}
       />
+
+      <div style={{ padding: '20px' }}>
+      <h2>GitHub Social Login</h2>
+      <button 
+        onClick={handleGithubLogin}
+        style={{ padding: '10px 20px', background: '#24292e', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+      >
+        Login with GitHub
+      </button>
+    </div>
 
       <hr style={{ margin: '40px 0' }} />
       <button onClick={getProtectedData}>Test Protected API</button>

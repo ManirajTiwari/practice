@@ -18,7 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from authentication.views import register_user, protected_route, GoogleLogin
-
+from authentication.views import GitHubLogin
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/register/', register_user, name='register'),
@@ -27,4 +27,5 @@ urlpatterns = [
     path('api/protected/',  protected_route, name= 'protected'),
     path('api/auth/google/', GoogleLogin.as_view(), name='google_Login'),
     path('dj-rest-auth/', include('dj_rest_auth.urls')),
+    path('api/auth/github/', GitHubLogin.as_view(), name='github_login'),
 ]

@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'authentication',
+    'allauth.socialaccount.providers.github',
 
 ]
 SITE_ID = 1
@@ -185,6 +186,17 @@ SOCIALACCOUNT_PROVIDERS = {
         'AUTH_PARAMS': {
             'access_type': 'online',
         }
+    },
+    'github': {
+        'APP': {
+            'client_id': 'YOUR_GITHUB_CLIENT_ID',
+            'secret': 'YOUR_GITHUB_CLIENT_SECRET',
+            'key': ''
+        },
+        'SCOPE': [
+            'user',
+            'user:email',
+        ],
     }
 }
 
